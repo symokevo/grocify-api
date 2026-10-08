@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum GroceryCategory {
+  FRUIT
+  VEGETABLE
+  LEAFY_VEGETABLE
+  ROOT_VEGETABLE
+  GRAIN
+  LEGUME
+  HERB
+  SPICE
+  NUT_SEED
+  MUSHROOM
+  OTHER
+}
+
+enum ProductClass {
+  GROCERY
+  RESTRICTED_LOCAL_PRODUCT
+}
+
+enum NutritionSource {
+  USDA
+  FAO
+  OTHER
+}
+
+enum ImageSource {
+  USDA
+  WIKIMEDIA
+  OTHER
+}
+
+model Grocery {
+  id             String  @id @default(cuid())
+  slug           String  @unique
+  name           String
+  scientificName String?
+
+  category     GroceryCategory
+  productClass ProductClass    @default(GROCERY)
+
+  shortDescription String
+  description      String
+
+  growingEnvironment String
+  harvestingProcess  String
+
+  howToChoose String[]
+  howToStore  String[]
+  commonUses  String[]
+
+  seasonality Json
+
+  nutrition GroceryNutrition?
+
+  aliases GroceryAlias[]
+  images  GroceryImage[]
+
+  isPublished Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@index([category])
+  @@index([isPublished])
+}
+
+model GroceryAlias {
+  id String @id @default(cuid())
+
+  groceryId String
+  grocery   Grocery @relation(fields: [groceryId], references: [id], onDelete: Cascade)
+
+  name String
+
+  isLocalName Boolean @default(false)
+  locale      String?
+  countryCode String?
+
+  @@unique([groceryId, name])
+  @@index([name])
+}
+
+model GroceryNutrition {
+  id String @id @default(cuid())
+
+  groceryId String  @unique
+  grocery   Grocery @relation(fields: [groceryId], references: [id], onDelete: Cascade)
+
+  basis String @default("Per 100 g")
+
+  calories           Float?
+  proteinGrams       Float?
+  carbohydratesGrams Float?
+  fatGrams           Float?
+  fibreGrams         Float?
+  sugarGrams         Float?
+
+  vitamins Json
+  minerals Json
+
+  benefits String[]
+
+  source   NutritionSource?
+  sourceId String?
+
+  updatedAt DateTime @updatedAt
+}
+
+model GroceryImage {
+  id String @id @default(cuid())
+
+  groceryId String
+  grocery   Grocery @relation(fields: [groceryId], references: [id], onDelete: Cascade)
+
+  url          String
+  thumbnailUrl String?
+
+  source    ImageSource?
+  sourceUrl String?
+
+  author      String?
+  license     String?
+  attribution String?
+
+  isPrimary Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([groceryId])
+}
